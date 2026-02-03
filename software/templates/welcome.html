@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0">
+		<link rel="shortcut icon" type="image/x-icon" href="{{ url_for('static', filename='img/favicon.png') }}">
+		<title>Integrated Patient Health System</title>
+		<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+		
+		<!-- Bootstrap CSS -->
+		<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/bootstrap.min.css') }}">
+		
+		<!-- Fontawesome CSS -->
+		<link rel="stylesheet" href="{{ url_for('static', filename='plugins/fontawesome/css/fontawesome.min.css') }}">
+		<link rel="stylesheet" href="{{ url_for('static', filename='plugins/fontawesome/css/all.min.css') }}">
+		
+		<!-- Select2 CSS -->
+		<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/select2.min.css') }}">
+		
+		<!-- Feathericon CSS -->
+		<link rel="stylesheet" href="{{ url_for('static', filename='css/feather.css') }}">
+		
+		<!-- Main CSS -->
+		<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/style.css') }}">
+		
+	</head>
+    <body>
+	
+		<!-- Main Wrapper -->
+		<div class="main-wrapper login-body">
+			<div class="container-fluid px-0">
+				<div class="row">
+				
+					<!-- Login logo -->
+					<div class="col-lg-6 login-wrap">
+						<div class="login-sec">
+							<div class="log-img" >
+								<video 
+									id="loginVideo"
+									autoplay 
+									muted 
+									loop 
+									playsinline>
+									<source src="{{ url_for('static', filename='img/welcome.mp4') }}" type="video/mp4">
+									Your browser does not support the video tag.
+								</video>
+								
+								<button id="muteBtn" class="yt-mute-btn muted" aria-label="Unmute video">
+									<svg class="yt-icon" viewBox="0 0 64 64" aria-hidden="true">
+
+										<!-- UNMUTED (speaker + waves) -->
+										<g class="icon-unmuted">
+											<!-- speaker body -->
+											<path d="M6 24h12l16-14v44L18 40H6z"></path>
+
+											<!-- wave 1 -->
+											<path d="M40 22c6 6 6 14 0 20l-4-4c3-4 3-8 0-12z"></path>
+
+											<!-- wave 2 -->
+											<path d="M48 16c10 10 10 22 0 32l-4-4c7-8 7-16 0-24z"></path>
+										</g>
+
+										<!-- MUTED (speaker + slash) -->
+										<g class="icon-muted">
+											<!-- speaker body -->
+											<path d="M6 24h12l16-14v44L18 40H6z"></path>
+
+											<!-- X (positioned to the RIGHT of the speaker) -->
+											<path d="M46 22L58 34" fill="none" stroke-width="6" stroke-linecap="round"></path>
+											<path d="M58 22L46 34" fill="none" stroke-width="6" stroke-linecap="round"></path>
+										</g>
+
+									</svg>
+								</button>
+							</div>
+						</div>
+					</div>
+					<!-- /Login logo -->
+					
+					<!-- Login Content -->
+					<div class="col-lg-7 login-wrap-bg">
+						<div class="login-wrapper">
+							<div class="loginbox">								
+								<div class="login-right">
+									<div class="login-right-wrap">
+										<div class="account-logo">
+											<a href="#"><img src="{{ url_for('static', filename='upec.png') }}" alt=""></a>
+										</div>
+										<h2 style="color: rgb(254, 0, 0);">Xisco chatBot 🤖</h2>
+										<h3 style="color: black;"> Virtual Assistant here to help you.</h3>
+										<p style="margin-top: 20px; margin-bottom: 40px; color: black;">Ready to chat, click the button below to start.</p>
+										<a href="{{ url_for('home') }}" class="btn btn-primary btn-block">
+											Get Started <i class="fa fa-arrow-right"></i>
+										</a>
+										<div class="next-sign" style="margin-top: 60px;">
+											<p class="account-subtitle">Developed with ❤️ by <a href="https://www.linkedin.com/in/dare-azeez-oyeyemi-900652b0/">Oyeyemi Dare</a> | Like/Give us review: </p>
+											
+											<!-- Social Login --> 
+											<div class="social-login">
+												<a href="https://www.linkedin.com/in/dare-azeez-oyeyemi-900652b0/" ><img src="{{ url_for('static', filename='img/icons/social-02.svg') }}" alt=""></a>
+												<a href="https://www.linkedin.com/in/dare-azeez-oyeyemi-900652b0/" ><img src="{{ url_for('static', filename='img/icons/login-icon-01.svg') }}" alt=""></a>
+												<a href="https://www.linkedin.com/in/dare-azeez-oyeyemi-900652b0/" ><img src="{{ url_for('static', filename='img/icons/login-icon-02.svg') }}" alt=""></a>
+											</div>
+											<!-- /Social Login -->
+											
+										</div>
+										
+									</div>
+								</div>
+							</div>
+							
+						</div>
+					</div>
+					<!-- /Login Content -->
+					
+				</div>
+			</div>
+		</div>
+		<!-- /Main Wrapper -->
+		
+		<!-- jQuery -->
+		<script src="{{ url_for('static', filename='js/jquery-3.7.1.min.js') }}"></script>
+		<!-- Bootstrap Core JS -->
+		<script src="{{ url_for('static', filename='js/bootstrap.bundle.min.js') }}"></script>
+		<!-- Feather Js -->
+		<script src="{{ url_for('static', filename='js/feather.min.js') }}"></script>
+		
+		
+		<!-- Custom JS -->
+		<script src="{{ url_for('static', filename='js/app.js') }}"></script>
+		
+    </body>
+</html>

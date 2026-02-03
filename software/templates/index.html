@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0">
+    <link rel="shortcut icon" type="image/x-icon" href="{{ url_for('static', filename='img/favicon.png') }}">
+    <title>Xisco chatBot</title>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/bootstrap.min.css') }}">
+    
+    <!-- Fontawesome CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='plugins/fontawesome/css/fontawesome.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='plugins/fontawesome/css/all.min.css') }}">
+    
+    <!-- Select2 CSS -->
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/select2.min.css') }}">
+    <!-- Feathericon CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/feather.css') }}">
+    
+    <!-- Main CSS -->
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/style.css') }}">
+     
+</head>
+
+<body>
+    <div class="main-wrapper">
+        <div class="header">
+            <div class="top-nav-search">
+                <a href="{{ url_for('index') }}" class="logo">
+                    <img src="{{ url_for('static', filename='upec.png') }}" width="175" height="50" alt="">
+                </a>
+            </div>
+            <ul class="nav user-menu float-end">
+                <li class="nav-item">
+                    <a href="javascript:void(0);" id="darkModeToggle" class="nav-link" style="color: black;">
+                        <i class="fa fa-moon"></i>
+                    </a>
+                </li>
+                <li class="social-login">
+                    <a href="https://www.linkedin.com/in/dare-azeez-oyeyemi-900652b0/" ><img src="{{ url_for('static', filename='img/icons/social-02.svg') }}" alt=""></a>
+                    <a href="https://www.linkedin.com/in/dare-azeez-oyeyemi-900652b0/" ><img src="{{ url_for('static', filename='img/icons/login-icon-01.svg') }}" alt=""></a>
+                    <a href="https://www.linkedin.com/in/dare-azeez-oyeyemi-900652b0/" ><img src="{{ url_for('static', filename='img/icons/login-icon-02.svg') }}" alt=""></a>
+                </li>
+            </ul>
+        </div>
+        <div class="page-wrapper">
+            <div class="content">
+                <div id="welcomeSection" class="row align-items-center" style="min-height: 70vh;">
+                    <div class="col-md-8 offset-md-2 text-center">
+                        <div style="margin-bottom: 30px;">
+                            <p class="hi"> 
+                                <img src="{{ url_for('static', filename='xiscoB.png') }}" alt="User" width="35" height="35"> Hi, User
+                            </p>
+                            <h1 class="welcomeG">Ask me anything,
+                                <span id="typewriter"></span><span class="cursor">|</span>
+                            </h1>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="chatMessages" class="chat-wrapper" style="display: none;">
+                    <div id="messageList" class="message-container">
+                    </div>
+                </div>
+
+                <div id="inputWrapper" class="fixed-input-container initial-state">
+                    <div class="row" style="background-color: #21252900;">
+                        <div class="col-md-8 offset-md-2">
+                            <div class="inputgroups">
+                                <button title="Turn on voice responses" type="button" id="voiceToggle" style="background:none; border:none; outline:none; cursor:pointer;">
+                                    <i class="fa fa-volume-mute" id="voiceIcon" style="color: black; font-size: 20px;"></i>
+                                </button>
+                                <textarea id="chatInput" placeholder="Ask me anything..." rows="1"></textarea>
+                                <button type="button" id="sendBtn" class="send-chat-btn">
+                                    <i class="fa-solid fa-paper-plane"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="footer fixed-bottom text-center bg-white p-2">
+                <small class="text-gray mb-0" style="font-size: 11px;">
+                    <span class="desktop-footer-text">
+                        Xisco can make mistakes, please double-check response. | 
+                    </span>
+                    Developed with ❤️ by 
+                    <a href="https://www.linkedin.com/in/dare-azeez-oyeyemi-900652b0/" class="link-primary">Oyeyemi Dare</a> 
+                    © All Rights Reserved
+                </small>
+            </div>
+        </div>
+    </div>
+    <!-- jQuery -->
+    <script src="{{ url_for('static', filename='js/jquery-3.7.1.min.js') }}"></script>
+    <!-- Bootstrap Core JS -->
+    <script src="{{ url_for('static', filename='js/bootstrap.bundle.min.js') }}"></script>
+    <!-- Feather Js -->
+    <script src="{{ url_for('static', filename='js/feather.min.js') }}"></script>
+    <!-- Slimscroll -->
+    <script src="{{ url_for('static', filename='js/jquery.slimscroll.js') }}"></script>
+    <!-- Custom JS -->
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+
+</html>
