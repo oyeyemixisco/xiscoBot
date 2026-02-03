@@ -2,12 +2,13 @@
 import io, os, uuid
 from flask import Flask, request, render_template, redirect, session, url_for, flash, jsonify, send_file, abort
 import mysql.connector
-
+import os
 from groq import Groq
 from dotenv import load_dotenv
+from pathlib import Path
 
-
-load_dotenv()
+env_path = Path('.') / '.env'
+load_dotenv(dotenv_path=env_path)
 
 # declaring Flask app
 app = Flask(__name__)
@@ -41,7 +42,7 @@ def chat():
     except Exception as e:
         print(f"Error: {e}")
         return jsonify({"response": "Sorry, I'm having trouble connecting to my brain right now."}), 500
-
+    
 # connect to the MySQL using the mysql.connector
 def get_db_connection():
     conn = mysql.connector.connect(
@@ -73,4 +74,5 @@ def register():
     return render_template('register.html')
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port, debug=False)
