@@ -814,7 +814,8 @@ async function sendMessage() {
 
         // 6. Replace dots with real AI text
         const aiMessageDiv = aiWrapper.querySelector('.ai-msg');
-        aiMessageDiv.innerText = data.response;
+        aiMessageDiv.innerHTML = marked.parse(data.response);
+
 		lastAiResponse = data.response;
 
 		speakText(data.response);
