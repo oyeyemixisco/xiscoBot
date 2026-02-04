@@ -899,14 +899,61 @@ function type() {
     setTimeout(type, typeSpeed);
 }
 
-window.speechSynthesis.onvoiceschanged = () => {
-  console.log("Voices loaded:", window.speechSynthesis.getVoices().length);
-};
+
 
 // Start the animation when the page loads
 document.addEventListener("DOMContentLoaded", () => {
     if (textElement) type();
 });
+
+// detect voice language
+function detectLang(text) {
+  const t = (text || "").toLowerCase();
+
+  // quick character hints
+  if (/[àâçéèêëîïôùûüÿœæ]/i.test(t) || /\b(le|la|ca|les|des|est|avec|pour|bonjour|merci)\b/i.test(t)) return "fr-FR";
+  if (/[ñáéíóúü¿¡]/i.test(t) || /\b(el|la|los|las|hola|gracias|por|para|con|que)\b/i.test(t)) return "es-ES";
+
+  // default
+  return "en-US";
+}
+
+// male voice selection
+function findVoiceForLang(lang, voices) {
+  const L = (lang || "").toLowerCase();
+
+  // common male-ish voice names on macOS (not guaranteed)
+  const maleNameHints = [
+    "daniel", "alex", "fred", "jorge", "diego", "carlos",
+    "thomas", "henri", "paul", "arnaud", "yann", "victor"
+  ];
+
+  // 1) try male voice that matches language
+  let v = voices.find(v =>
+    (v.lang || "").toLowerCase().startsWith(L.slice(0, 2)) &&
+    maleNameHints.some(h => (v.name || "").toLowerCase().includes(h))
+  );
+  if (v) return v;
+
+  // 2) otherwise: any voice matching language
+  v = voices.find(v => (v.lang || "").toLowerCase().startsWith(L.slice(0, 2)));
+  if (v) return v;
+
+  // 3) fallback: any male-ish voice regardless of lang
+  v = voices.find(v => maleNameHints.some(h => (v.name || "").toLowerCase().includes(h)));
+  if (v) return v;
+
+  // 4) last fallback
+  return voices[0] || null;
+}
+
+
+
+// voice
+
+window.speechSynthesis.onvoiceschanged = () => {
+  console.log("Voices loaded:", window.speechSynthesis.getVoices().length);
+};
 
 let isVoiceEnabled = false;
 let VOICES = [];
@@ -965,38 +1012,30 @@ function speakText(text) {
   if (!isVoiceEnabled) return;
   if (!text || !text.trim()) return;
 
-  // Stop any ongoing speech
   window.speechSynthesis.cancel();
 
   const u = new SpeechSynthesisUtterance(text);
 
-  // Try to pick a good Mac voice (fallback if not found)
-  const voices = window.speechSynthesis.getVoices();
-  const preferred =
-    voices.find(v => v.name.includes("Samantha")) ||
-    voices.find(v => v.name.includes("Daniel")) ||
-    voices.find(v => v.lang && v.lang.toLowerCase().startsWith("en")) ||
-    voices[0];
+  // detect language from the text itself
+  const lang = detectLang(text);
+  u.lang = lang; // ✅ helps accent/pronunciation
 
-  if (preferred) u.voice = preferred;
+  const voices = window.speechSynthesis.getVoices();
+  const chosen = findVoiceForLang(lang, voices);
+
+  if (chosen) u.voice = chosen;
 
   u.rate = 1;
-  u.pitch = 1;
+  u.pitch = 1;     // keep normal pitch (male voices are already lower)
   u.volume = 1;
 
-  u.onstart = () => console.log("Speech started:", u.voice?.name);
+  u.onstart = () => console.log("Speech started:", u.voice?.name, "lang:", u.lang);
   u.onend = () => console.log("Speech ended");
   u.onerror = (e) => console.error("Speech error:", e);
 
-  // ✅ Mac/Chrome reliability trick: delay slightly after cancel()
   setTimeout(() => window.speechSynthesis.speak(u), 80);
 }
 
-
-// Init once
-document.addEventListener("DOMContentLoaded", () => {
-  setupVoice();
-});
 
 // Initialization
 document.addEventListener("DOMContentLoaded", () => {

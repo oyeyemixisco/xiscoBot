@@ -1555,7 +1555,6 @@ textarea.form-control {
   top:0;
   left:0;
   height:100vh;
-  width:50vw;
   padding:0;
   border-radius:0 65px 65px 0;
   overflow:hidden;
@@ -2995,6 +2994,23 @@ body[data-layout-mode=dark] .alertify .ajs-header {
 	}
 }
 @media only screen and (max-width: 991.98px) {
+    /* Ensure the containers stack normally instead of overlapping */
+    .login-wrap, .login-wrap-bg {
+        position: relative !important;
+        top: 0 !important;
+        margin-top: 0 !important;
+        width: 100% !important;
+    }
+
+    /* Force the video to stay at the top and the login box to follow below it */
+    .login-wrapper {
+        margin-top: 20px; /* Gives a little breathing room between video and text */
+        position: relative;
+        z-index: 1;
+    }
+}
+
+@media only screen and (max-width: 991.98px) {
 	.profile-rightbar {
 		display: inline-block !important;
 	}
@@ -3082,14 +3098,6 @@ body[data-layout-mode=dark] .alertify .ajs-header {
 		25%, 75% { opacity: 0; }
 	}
 
-	
-
-
-
-	.invoices-view {
-		width: 100%;
-		float: none;
-	}
 	#toggle_btn {
 		display: none;
 	}
@@ -3103,90 +3111,22 @@ body[data-layout-mode=dark] .alertify .ajs-header {
 		-moz-transition: all 0.4s ease;
 		transition: all 0.4s ease;
 	}
-	/* invoice */
-	.app-listing li {
-		width: 49%;
-		display: inline-block;
-	}
-	.app-listing {
-		display: inline-block;
-	}
-	.multipleSelection #checkBoxes, 
-	.SortBy #checkBox {
-		width: 100%;
-	}
-	.inovices-month-info {
-		padding-top: 20px;
-	}
-	.invoice-inner-date {
-		padding:  10px;
-	}
-	.invoice-inner-date.invoice-inner-datepic {
-		padding: 10px 0;
-	}
-	.field-box .btn {
-		min-width: auto;
-		border-radius: 4px;
-		padding: 10px;
-	}
-	.invoice-inner-head {
-		padding: 10px;
-		border-bottom: 1px solid #E5E5E5;
-	}
-	.invoice-circle-img {
-		display: none;
-	}
-	.invoice-item-bg .invoice-info {
-		border-right: 1px solid #fff;
-		padding: 10px 30px;
-		margin-top: 20px;
-	}
-	.invoice-item-bg .invoice-info {
-		border-right: 1px solid #fff;
-		padding: 10px 30px;
-		margin-top: 0;
-	}
-	.invoice-info {
-		margin-bottom: 0;
-	}
-	.payment-details {
-		width: auto;
-	}
-	.invoices-preview .modal-dialog {
-		max-width: 700px;
-	}
-	.invoice-item-one .invoice-info {
-		text-align: left;
-	}
-	.invoice-head h2 {
-		font-size: 16px;
-	}
-	.invoice-head p {
-		font-size: 14px;
-	}
-	.invoice-payment-box .payment-details {
-		margin-bottom: 20px;
-	}
-	.invoice-faq .faq-tab {
-		padding-bottom: 10px;
-	}
-	.service-upload {
-		padding: 30px 0;
-		width: auto;
-	}
-	.invoice-inner-date.invoice-inner-datepic {
-		padding: 10px;
-	}
-	.bank-details-btn .btn {
-		min-width: auto;
-		padding: 10px;
-	}
-	.invoice-info-card .invoice-item-one .invoice-info {
-		text-align: right;
-	}
+	
+	
 	.login-wrap {
-		display: none;
-	}
+        display: block; 
+        max-height: 360px; 
+        overflow: hidden;
+		margin-left: calc(-50vw + 50%);
+		border-radius: 0px;
+		
+    }
+    #loginVideo {
+        object-fit: cover; 
+        height: 365px;
+		padding: 15px;
+		width: 290px;
+    }
 	.account-logo,
 	.login-wrapper .loginbox .login-right h2,
 	.login-wrapper .loginbox .login-right .forgotpass,
@@ -3216,24 +3156,7 @@ body[data-layout-mode=dark] .alertify .ajs-header {
 	.user-menu.nav li {
 		margin-right: 6px;
 	}
-	.profile-user-img img {
-		width: 60px;
-	}
-	.profile-edit-icon img {
-		width: 15px;
-	}
-	.names-profiles h4 {
-		font-size: 14px;
-	}
-	.names-profiles h5 {
-		font-size: 12px;
-	}
-	.doctor-follows h5 {
-		font-size: 12px;
-	}
-	.doctor-follows h4 {
-		font-size: 16px;
-	}
+	
 	.follow-btn-group .btn-info {
 		min-width: 90px;
 		font-size: 12px;
