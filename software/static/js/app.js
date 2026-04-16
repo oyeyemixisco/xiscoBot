@@ -1,4 +1,4 @@
-let lastAiResponse = "";
+
 $(document).ready(function($) {
 	
 	// Variables declarations
@@ -690,6 +690,8 @@ $(document).ready(function($) {
 
 
 
+
+
 document.addEventListener('DOMContentLoaded', () => {
   const video = document.getElementById('loginVideo');
   const muteBtn = document.getElementById('muteBtn');
@@ -738,6 +740,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
+let lastAiResponse = "";
+
 const textarea = document.getElementById('chatInput');
 const sendBtn = document.getElementById('sendBtn');
 
@@ -761,70 +765,128 @@ textarea.addEventListener('input', function() {
     }
 });
 
+let activeTTS = { btn: null, speaking: false };
+
 
 async function sendMessage() {
-    const text = chatInput.value.trim();
-    if (!text) return;
+	document.dispatchEvent(new Event("mousemove"));
+  const text = chatInput.value.trim();
+  if (!text) return;
 
-    // 1. UI Transition (Welcome -> Chat)
-    if (window.getComputedStyle(welcomeSection).display !== 'none') {
-        welcomeSection.style.display = 'none';
-        chatMessages.style.display = 'block';
-        inputWrapper.classList.remove('initial-state');
-        inputWrapper.classList.add('chatting-mode');
+  // UI Transition
+  if (welcomeSection && window.getComputedStyle(welcomeSection).display !== 'none') {
+    welcomeSection.style.display = 'none';
+    chatMessages.style.display = 'block';
+    inputWrapper.classList.remove('initial-state');
+    inputWrapper.classList.add('chatting-mode');
+    document.body.classList.add('chatting-mode-active');
+  }
 
-		document.body.classList.add('chatting-mode-active');
-    }
+  // User message (SAFE)
+  const userWrapper = document.createElement('div');
+  userWrapper.className = 'chat-message-wrapper user-side';
 
-    // 2. Add User Message to UI
-    const userWrapper = document.createElement('div');
-    userWrapper.className = 'chat-message-wrapper user-side';
-    userWrapper.innerHTML = `
-        <div class="avatar"><img src="/static/img/user1.jpg"></div>
-        <div class="message user-msg">${text}</div>
-    `;
-    messageList.appendChild(userWrapper);
+  const avatar = document.createElement('div');
+  avatar.className = 'avatar';
+  avatar.innerHTML = `<img src="/static/img/user1.jpg">`;
 
-    // 3. Clear and Reset Input
-    chatInput.value = "";
-    chatInput.style.height = 'auto';
-    sendBtn.classList.remove('active');
-    window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+  const msg = document.createElement('div');
+  msg.className = 'message user-msg';
+  msg.textContent = text;
 
-    // 4. Show AI "Typing" Bubble
-    const aiWrapper = document.createElement('div');
-    aiWrapper.className = 'chat-message-wrapper ai-side';
-    aiWrapper.innerHTML = `
-        <div class="avatar"><img src="/static/xiscoB.png"></div>
-        <div class="message ai-msg">
-            <div class="typing-dots"><span></span><span></span><span></span></div>
-        </div>
-    `;
-    messageList.appendChild(aiWrapper);
+  userWrapper.appendChild(avatar);
+  userWrapper.appendChild(msg);
+  messageList.appendChild(userWrapper);
 
-    try {
-        // 5. POST request to Flask
-        const response = await fetch('/chat', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ message: text })
-        });
+  chatInput.value = "";
+  chatInput.style.height = 'auto';
+  sendBtn.classList.remove('active');
 
-        const data = await response.json();
+  // AI typing bubble
+  const aiWrapper = document.createElement('div');
+  aiWrapper.className = 'chat-message-wrapper ai-side';
+  aiWrapper.innerHTML = `
+    <div class="avatar"><img src="/static/xiscoB.png"></div>
+    <div class="message ai-msg">
+      
+    </div>
+  `;
+  messageList.appendChild(aiWrapper);
 
-        // 6. Replace dots with real AI text
-        const aiMessageDiv = aiWrapper.querySelector('.ai-msg');
-        aiMessageDiv.innerHTML = marked.parse(data.response);
+  try {
+    const response = await fetch('/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: text })
+    });
 
-		lastAiResponse = data.response;
+    if (!response.ok) throw new Error(`Server error ${response.status}`);
 
-		speakText(data.response);
+	const aiMessageDiv = aiWrapper.querySelector('.ai-msg');
+	aiMessageDiv.innerHTML = ""; // remove typing dots
 
-    } catch (error) {
-        aiWrapper.querySelector('.ai-msg').innerText = "Connection error. Please try again.";
-    }
+	const reader = response.body.getReader();
+	const decoder = new TextDecoder();
 
-    window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+	let fullText = "";
+
+	while (true) {
+		
+		const { done, value } = await reader.read();
+		if (done) break;
+
+		const chunk = decoder.decode(value, { stream: true });
+		fullText += chunk;
+
+		const safeHTML = DOMPurify.sanitize(marked.parse(fullText));
+		aiMessageDiv.innerHTML = safeHTML;
+
+		// scroll at bottom
+		window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+	}
+
+	lastAiResponse = fullText;
+	saveChatState();
+
+	if (isVoiceEnabled) {
+		speakText(lastAiResponse);
+	}
+    
+
+	// Add per-message speaker button
+	const speakBtn = document.createElement("button");
+	speakBtn.type = "button";
+	speakBtn.className = "msg-tts-btn";
+	speakBtn.title = "Read aloud";
+	speakBtn.innerHTML = `<i class="fa fa-volume-mute"></i>`;
+
+	// store clean text for speech directly on the button
+	speakBtn.dataset.speech = stripLinksForSpeech(fullText);
+
+	aiMessageDiv.appendChild(speakBtn);
+
+
+    // wrap tables
+    aiMessageDiv.querySelectorAll('table').forEach(table => {
+      if (table.parentElement?.classList.contains('table-scroll')) return;
+      const wrapper = document.createElement('div');
+      wrapper.className = 'table-scroll';
+      table.parentNode.insertBefore(wrapper, table);
+      wrapper.appendChild(table);
+    });
+
+    // highlight code
+    aiMessageDiv.querySelectorAll('pre code').forEach(block => {
+      hljs.highlightElement(block);
+    });
+
+  } catch (err) {
+    aiWrapper.querySelector('.ai-msg').textContent =
+      "Sorry — something went wrong. Please try again.";
+    console.error(err);
+  }
+
+  window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
 }
 
 // Helper function to toggle the text
@@ -851,10 +913,12 @@ sendBtn.addEventListener('click', sendMessage);
 
 // Attach to Enter Key
 chatInput.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-        e.preventDefault();
-        sendMessage();
-    }
+  const isMobile = window.innerWidth < 768;
+
+  if (!isMobile && e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    sendMessage();
+  }
 });
 
 // TypeWriter
@@ -906,140 +970,430 @@ document.addEventListener("DOMContentLoaded", () => {
     if (textElement) type();
 });
 
+
+
 // detect voice language
 function detectLang(text) {
   const t = (text || "").toLowerCase();
+  // Checks for French-specific accents and common functional words (le, la, est, etc.)
+  const isFrench = 
+    /[àâçéèêëîïôùûüÿœæ]/i.test(t) || 
+    /\b(le|la|les|un|une|est|et|que|qui|dans|pas|ce|ca|ça|pour|en|bonjour|merci)\b/i.test(t);
+  
+  if (isFrench) return "fr-FR";
 
-  // quick character hints
-  if (/[àâçéèêëîïôùûüÿœæ]/i.test(t) || /\b(le|la|ca|les|des|est|avec|pour|bonjour|merci)\b/i.test(t)) return "fr-FR";
-  if (/[ñáéíóúü¿¡]/i.test(t) || /\b(el|la|los|las|hola|gracias|por|para|con|que)\b/i.test(t)) return "es-ES";
+  // Checks for Spanish-specific characters (ñ, ¿, ¡) and common functional words
+  const isSpanish = 
+    /[ñáéíóúü¿¡]/i.test(t) || 
+    /\b(el|la|los|las|hola|gracias|por|para|con|que|si|no)\b/i.test(t);
+  
+  if (isSpanish) return "es-ES";
 
-  // default
+  // Default Fallback
   return "en-US";
 }
 
 // male voice selection
 function findVoiceForLang(lang, voices) {
-  const L = (lang || "").toLowerCase();
+  const L2 = (lang || "").slice(0, 2).toLowerCase();
 
-  // common male-ish voice names on macOS (not guaranteed)
-  const maleNameHints = [
-    "daniel", "alex", "fred", "jorge", "diego", "carlos",
-    "thomas", "henri", "paul", "arnaud", "yann", "victor"
-  ];
+  const qualityHints = ["neural", "natural", "premium", "enhanced", "google"];
+  const maleNameHints = ["daniel", "alex", "fred", "jorge", "diego", "carlos", "thomas", "henri", "paul", "arnaud"];
 
-  // 1) try male voice that matches language
-  let v = voices.find(v =>
-    (v.lang || "").toLowerCase().startsWith(L.slice(0, 2)) &&
-    maleNameHints.some(h => (v.name || "").toLowerCase().includes(h))
-  );
+  const byLang = v =>
+    ((v.lang || "").toLowerCase().startsWith(L2));
+
+  const isQuality = v =>
+    qualityHints.some(h =>
+      ((v.name || "").toLowerCase().includes(h))
+    );
+
+  const isMaleish = v =>
+    maleNameHints.some(h =>
+      ((v.name || "").toLowerCase().includes(h))
+    );
+
+  // 1️⃣ language + quality + male
+  let v = voices.find(v => byLang(v) && isQuality(v) && isMaleish(v));
   if (v) return v;
 
-  // 2) otherwise: any voice matching language
-  v = voices.find(v => (v.lang || "").toLowerCase().startsWith(L.slice(0, 2)));
+  // 2️⃣ language + quality
+  v = voices.find(v => byLang(v) && isQuality(v));
   if (v) return v;
 
-  // 3) fallback: any male-ish voice regardless of lang
-  v = voices.find(v => maleNameHints.some(h => (v.name || "").toLowerCase().includes(h)));
+  // 3️⃣ language + male
+  v = voices.find(v => byLang(v) && isMaleish(v));
   if (v) return v;
 
-  // 4) last fallback
+  // 4️⃣ language only
+  v = voices.find(byLang);
+  if (v) return v;
+
   return voices[0] || null;
 }
 
-
-
 // voice
+let ttsUnlocked = false;
+let currentUtterance = null;
+let currentBtn = null;
 
-window.speechSynthesis.onvoiceschanged = () => {
-  console.log("Voices loaded:", window.speechSynthesis.getVoices().length);
-};
+function unlockTTSOnce() {
+  if (ttsUnlocked) return;
+  ttsUnlocked = true;
+
+  try {
+    speechSynthesis.cancel();
+    speechSynthesis.resume();
+    const u = new SpeechSynthesisUtterance(" ");
+    u.volume = 0;
+    speechSynthesis.speak(u);
+  } catch (e) {
+    console.warn("TTS unlock failed:", e);
+  }
+}
 
 let isVoiceEnabled = false;
 let VOICES = [];
 
 function loadVoices() {
   VOICES = window.speechSynthesis.getVoices() || [];
+  return VOICES;
 }
 
-function pickVoice() {
-  // Prefer good Mac voices if available
-  const preferredNames = ["Samantha", "Daniel", "Victoria", "Alex"];
-  for (const name of preferredNames) {
-    const v = VOICES.find(x => x.name && x.name.includes(name));
-    if (v) return v;
-  }
-  // else pick an English voice
-  const en = VOICES.find(x => (x.lang || "").toLowerCase().startsWith("en"));
-  return en || VOICES[0] || null;
-}
+window.speechSynthesis.onvoiceschanged = () => {
+  loadVoices();
+  console.log("Voices loaded:", VOICES.length);
+};
+
+
+
 
 function setupVoice() {
-  const voiceToggle = document.getElementById('voiceToggle');
-  const voiceIcon = document.getElementById('voiceIcon');
+  const voiceToggle = document.getElementById("voiceToggle");
+  const voiceIcon = document.getElementById("voiceIcon");
   if (!voiceToggle || !voiceIcon) return;
 
   if (voiceToggle.dataset.bound === "1") return;
   voiceToggle.dataset.bound = "1";
 
-  voiceToggle.addEventListener('click', function(e) {
+  // warm up voices
+  loadVoices();
+
+  voiceToggle.addEventListener("click", (e) => {
     e.preventDefault();
     e.stopPropagation();
 
     isVoiceEnabled = !isVoiceEnabled;
-    console.log("Voice enabled:", isVoiceEnabled, "voices:", speechSynthesis.getVoices().length);
 
     if (isVoiceEnabled) {
+      unlockTTSOnce();         // ✅ must happen from user click
+      speechSynthesis.resume(); // ✅ unpause engine
+
       voiceIcon.className = "fa fa-volume-up";
       voiceIcon.style.color = "#2e0074";
 
-      // ✅ speak last AI response immediately
       if (lastAiResponse) speakText(lastAiResponse);
     } else {
       voiceIcon.className = "fa fa-volume-mute";
       voiceIcon.style.color = "black";
       speechSynthesis.cancel();
     }
+
+    console.log("Voice enabled:", isVoiceEnabled, "voices:", (speechSynthesis.getVoices() || []).length);
   });
 }
-
 
 document.addEventListener("DOMContentLoaded", setupVoice);
 
 
-function speakText(text) {
-  console.log("speakText called. isVoiceEnabled =", isVoiceEnabled);
-  if (!isVoiceEnabled) return;
-  if (!text || !text.trim()) return;
+function speakText(text, { onStart, onEnd, onError } = {}) {
+  const cleanText = stripLinksForSpeech(text || "");
+  if (!cleanText.trim()) return;
 
-  window.speechSynthesis.cancel();
+  speechSynthesis.cancel();
+  speechSynthesis.resume();
 
-  const u = new SpeechSynthesisUtterance(text);
+  const lang = detectLang(cleanText);
 
-  // detect language from the text itself
-  const lang = detectLang(text);
-  u.lang = lang; // ✅ helps accent/pronunciation
+  function actuallySpeak() {
+    const voices = speechSynthesis.getVoices() || [];
+    const selectedVoice = findVoiceForLang(lang, voices);
 
-  const voices = window.speechSynthesis.getVoices();
-  const chosen = findVoiceForLang(lang, voices);
+    const u = new SpeechSynthesisUtterance(cleanText);
+    u.lang = lang;
 
-  if (chosen) u.voice = chosen;
+    if (selectedVoice) {
+      u.voice = selectedVoice;
+    }
 
-  u.rate = 1;
-  u.pitch = 1;     // keep normal pitch (male voices are already lower)
-  u.volume = 1;
+    u.onstart = () => onStart && onStart(selectedVoice, lang);
+    u.onend = () => onEnd && onEnd();
+    u.onerror = (e) => onError && onError(e);
 
-  u.onstart = () => console.log("Speech started:", u.voice?.name, "lang:", u.lang);
-  u.onend = () => console.log("Speech ended");
-  u.onerror = (e) => console.error("Speech error:", e);
+    setTimeout(() => speechSynthesis.speak(u), 100);
+  }
 
-  setTimeout(() => window.speechSynthesis.speak(u), 80);
+  // 🔹 THIS IS FIX 2
+  const voicesNow = speechSynthesis.getVoices() || [];
+
+  if (!voicesNow.length) {
+    speechSynthesis.onvoiceschanged = () => {
+      speechSynthesis.onvoiceschanged = null;
+      actuallySpeak();
+    };
+    return;
+  }
+
+  actuallySpeak();
+}
+
+// url stripping
+function stripLinksForSpeech(text) {
+  if (!text) return "";
+
+  return text
+    // LinkedIn ONLY → "Name on LinkedIn"
+    .replace(
+      /\[([^\]]+)\]\((https?:\/\/(www\.)?linkedin\.com[^\)]*)\)/gi,
+      "$1"
+    )
+
+    // Any other markdown link → just the text
+    .replace(
+      /\[([^\]]+)\]\((https?:\/\/[^\)]+)\)/g,
+      "$1"
+    )
+
+    // Raw URLs
+    .replace(/https?:\/\/\S+/g, "")
+    .replace(/www\.\S+/g, "")
+
+    // Clean spacing
+    .replace(/\s{2,}/g, " ")
+    .trim();
+}
+
+// Working fine and sound is ok on histroy
+
+(function () {
+  const INACTIVITY_LIMIT = 5 * 60 * 1000;   // 2 mins
+  const WARNING_AT = 4 * 60 * 1000;       // 1.5 mins
+
+  let lockTimer = null;
+  let warnTimer = null;
+  let pausedUntil = 0;
+
+  function clearTimers() {
+    if (lockTimer) clearTimeout(lockTimer);
+    if (warnTimer) clearTimeout(warnTimer);
+    lockTimer = null;
+    warnTimer = null;
+  }
+
+  function scheduleTimers() {
+    clearTimers();
+
+    const now = Date.now();
+    const pauseRemaining = Math.max(0, pausedUntil - now);
+
+    warnTimer = setTimeout(() => {
+      showInactivityWarning();
+    }, pauseRemaining + WARNING_AT);
+
+    lockTimer = setTimeout(() => {
+		saveChatState();
+      window.location.href = "/lock";
+    }, pauseRemaining + INACTIVITY_LIMIT);
+  }
+
+  function resetTimer() {
+    scheduleTimers();
+  }
+
+  // ✅ Global pause you can call from anywhere
+  window.pauseAutoLock = function (ms = 40000) {
+    pausedUntil = Date.now() + ms;
+    scheduleTimers();
+  };
+
+  ["mousemove","mousedown","keydown","scroll","touchstart","click"]
+    .forEach(evt => document.addEventListener(evt, resetTimer, { passive: true }));
+
+  resetTimer();
+})();
+
+function pauseAutoLock() {
+  window.dispatchEvent(new Event("pauseAutoLock")); 
+
+  clearTimeout(window._pauseLockTimer);
+  window._pauseLockTimer = setTimeout(() => {
+    window.dispatchEvent(new Event("resumeAutoLock"));
+  }, 30000);
+}
+
+function showInactivityWarning() {
+  if (document.getElementById("lock-warning")) return;
+
+  const div = document.createElement("div");
+  div.id = "lock-warning";
+  div.textContent = "Chat session will be locked soon due to inactivity.";
+  div.style.cssText = `
+    position: fixed;
+    bottom: 80px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #111;
+    color: #fff;
+    padding: 10px 16px;
+    border-radius: 6px;
+    z-index: 9999;
+    font-size: 14px;
+	white-space: nowrap;     
+    text-align: center;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    pointer-events: none;
+  `;
+
+  document.body.appendChild(div);
+
+  setTimeout(() => div.remove(), 10000);
 }
 
 
-// Initialization
+// resume chat
+const CHAT_STORAGE_KEY = "xisco_chat_state_v1";
+
+function saveChatState() {
+  const messageList = document.getElementById("messageList");
+  const welcomeSection = document.getElementById("welcomeSection");
+  const chatMessages = document.getElementById("chatMessages");
+  const inputWrapper = document.getElementById("inputWrapper");
+
+  if (!messageList) return;
+
+  const state = {
+    html: messageList.innerHTML, // save bubbles exactly
+    isWelcomeHidden: welcomeSection ? (getComputedStyle(welcomeSection).display === "none") : true,
+    isChatVisible: chatMessages ? (getComputedStyle(chatMessages).display !== "none") : true,
+    inputMode: inputWrapper ? (inputWrapper.classList.contains("chatting-mode") ? "chatting" : "initial") : "chatting",
+    lastAiResponse: window.lastAiResponse || "",
+    savedAt: Date.now()
+  };
+
+  localStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(state));
+}
+
+function restoreChatState() {
+  const raw = localStorage.getItem(CHAT_STORAGE_KEY);
+  if (!raw) return;
+
+  const state = JSON.parse(raw);
+
+  const messageList = document.getElementById("messageList");
+  const welcomeSection = document.getElementById("welcomeSection");
+  const chatMessages = document.getElementById("chatMessages");
+  const inputWrapper = document.getElementById("inputWrapper");
+
+  if (!messageList) return;
+
+  // restore messages
+  messageList.innerHTML = state.html || "";
+
+  // restore UI mode
+	if (welcomeSection) welcomeSection.style.display = state.isWelcomeHidden ? "none" : "";
+	if (chatMessages)   chatMessages.style.display   = state.isChatVisible   ? ""     : "none";
+
+	if (welcomeSection && getComputedStyle(welcomeSection).display !== "none") {
+		document.body.classList.remove("chatting-mode-active");
+	}
+
+  if (inputWrapper) {
+    inputWrapper.classList.remove("initial-state", "chatting-mode");
+    inputWrapper.classList.add(state.inputMode === "chatting" ? "chatting-mode" : "initial-state");
+  }
+
+  window.lastAiResponse = state.lastAiResponse || "";
+
+  // re-apply table wrapping + highlight for restored HTML
+  messageList.querySelectorAll(".ai-msg table").forEach(table => {
+    if (table.parentElement?.classList.contains("table-scroll")) return;
+    const wrapper = document.createElement("div");
+    wrapper.className = "table-scroll";
+    table.parentNode.insertBefore(wrapper, table);
+    wrapper.appendChild(table);
+  });
+
+  messageList.querySelectorAll(".ai-msg pre code").forEach(block => {
+    hljs.highlightElement(block);
+  });
+
+  // scroll to bottom
+  window.scrollTo({ top: document.body.scrollHeight, behavior: "auto" });
+}
+document.addEventListener("DOMContentLoaded", restoreChatState);
+
+
+function clearChatState() {
+  localStorage.removeItem(CHAT_STORAGE_KEY);
+  if (window.speechSynthesis) window.speechSynthesis.cancel();
+  location.reload();
+}
+
 document.addEventListener("DOMContentLoaded", () => {
-    setupVoice();
-    // Warm up voices
-    window.speechSynthesis.getVoices();
+  const btn = document.getElementById("newChatBtn");
+  if (!btn) return;
+
+  btn.addEventListener("click", () => {
+    // optional confirm
+    if (confirm("Start a new chat? This will clear the current chat history on this device.")) {
+      clearChatState();
+    }
+  });
+});
+
+document.addEventListener("DOMContentLoaded", () => {
+  const list = document.getElementById("messageList");
+  if (!list) return;
+
+  list.addEventListener("click", (e) => {
+    const btn = e.target.closest(".msg-tts-btn");
+    if (!btn) return;
+
+    e.preventDefault();
+    e.stopPropagation();
+
+    // Unlock audio engine from a user click (Safari/Chrome requirement)
+    unlockTTSOnce();
+    speechSynthesis.resume();
+
+    // If this same button is currently speaking -> stop
+    if (currentBtn === btn && speechSynthesis.speaking) {
+      speechSynthesis.cancel();
+      btn.innerHTML = `<i class="fa fa-volume-mute"></i>`;
+      currentBtn = null;
+      return;
+    }
+
+    // If another message is speaking -> stop it + reset icon
+    if (currentBtn && currentBtn !== btn) {
+      currentBtn.innerHTML = `<i class="fa fa-volume-mute"></i>`;
+      speechSynthesis.cancel();
+    }
+
+    const speechText = btn.dataset.speech || btn.closest(".ai-msg")?.innerText || "";
+    currentBtn = btn;
+
+    // button shows ⏹ while speaking
+    speakText(speechText, {
+      onStart: () => btn.innerHTML = "⏹",
+      onEnd: () => {
+        if (currentBtn === btn) currentBtn = null;
+        btn.innerHTML = `<i class="fa fa-volume-mute"></i>`;
+      },
+      onError: () => {
+        if (currentBtn === btn) currentBtn = null;
+        btn.innerHTML = `<i class="fa fa-volume-mute"></i>`;
+      }
+    });
+  });
 });
