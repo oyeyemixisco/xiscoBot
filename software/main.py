@@ -1,6 +1,6 @@
 # Importing modules
 import io, os, uuid
-from flask import Flask, request, Response, render_template, redirect, session, url_for, flash, jsonify, send_file, abort
+from flask import Flask, request, Response, stream_with_context, render_template, redirect, session, url_for, flash, jsonify, send_file, abort
 import mysql.connector
 import os
 from groq import Groq
@@ -72,11 +72,12 @@ def chat():
 
         
         def extract_content(chunk):
-            if isinstance(chunk, tuple):
-                chunk = chunk[0]
             try:
+                if isinstance(chunk, tuple):
+                    chunk = chunk[0]
+
                 return chunk.choices[0].delta.content
-            except:
+            except Exception:
                 return None
 
 
@@ -96,7 +97,14 @@ def chat():
                 if content:
                     yield content
 
-        return Response(generate(), content_type="text/plain")
+        return Response(
+            stream_with_context(generate()),
+            mimetype="text/plain",
+            headers={
+                "Cache-Control": "no-cache",
+                "X-Accel-Buffering": "no"
+            }
+        )
 
     except Exception as e:
         print(f"Error: {e}")
