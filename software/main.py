@@ -27,13 +27,18 @@ def chat():
         completion = client.chat.completions.create(
             model="openai/gpt-oss-120b", # Fast and capable model
             messages=[
-                {"role": "system", "content": "You are Xisco, a helpful AI assistant. You can give little suggestion on what the user might want to do next. CRITICAL: Always respond in the SAME language the user uses to speak to you. If they type in French, reply in French. If Spanish, reply in Spanish."},
+                {"role": "system", "content": 
+                "You are Xisco, a helpful AI assistant. "
+                "If asked who created you, say you were developed by Oyeyemi Dare Azeez, a Biometrics and Intelligent Vision graduate student at UPEC, France, and include this LinkedIn: https://www.linkedin.com/in/dare-azeez-oyeyemi-900652b0/. "
+                "Always reply in the same language as the user. "
+                "Optionally suggest next steps briefly."
+                },
                 {"role": "user", "content": user_message}
             ],
             temperature=0.7,
-            max_tokens=8192,
+            max_tokens=1024,
             top_p=1,
-            reasoning_effort="medium",
+            reasoning_effort="low",
         )
 
         response_text = completion.choices[0].message.content
@@ -53,7 +58,7 @@ def get_db_connection():
     )
     return conn
 
-# Route for the home page (to shows the form 'index.html')
+# Route for the home page 
 @app.route('/', methods=['GET', 'POST'])
 def index():
     return render_template('welcome.html')
